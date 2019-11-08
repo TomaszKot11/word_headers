@@ -1,17 +1,26 @@
 require 'json'
-TAB_WIDTH = " "
+TAB_WIDTH = ' '
 
 puts 'Please provide the file name with sample data:'
-# file_name = gets.chomp
-file_name = 'sample_two.json'
+file_name = gets.chomp
 
 # read and parse the file
 json_file = File.read(file_name)
-data_hash = JSON.parse(json_file) # TODO: add error handling
+data_hash = begin # rubocop does not supoport such things ;>
+              JSON.parse(json_file)
+            rescue JSON::ParserError
+              puts 'Error parsing JSON file'
+              exit 1
+            end
 
 
 # create the output file
-file = File.open("output.txt", "w") # handle errros
+file = begin
+          File.open('output.txt', 'w')
+       rescue IOError
+          puts 'Error opening the file'
+          exit 1
+       end
 
 data_hash.first['number'] = '1.'
 
@@ -19,7 +28,7 @@ data_hash.each_with_index do |record, idx|
   tabs = TAB_WIDTH * record['heading_level']
   prev_record = data_hash[idx-1] if idx >= 1
 
-  # recursion?
+  # recursion? + case when the more nested header was present
   unless prev_record.nil?
     counter = 0
     last_el = data_hash[0..(idx-1)].find_all do |el|
@@ -39,7 +48,7 @@ data_hash.each_with_index do |record, idx|
     end
   end
 
-  str = "#{tabs}#{record['number']}.#{record['title']}\n".gsub('..', '.')
+  str = "#{tabs}#{record['number']}.#{record['title']}\n".gsub('..', '.') # poor solution :(
 
   file.write(str)
 end
